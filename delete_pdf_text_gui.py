@@ -66,52 +66,121 @@ def delete_text(input_path, target_text, keep_prefix=""):
     return total, matched, output_path
 
 
+def make_button(parent, text, command, bg="#1677ff", fg="#ffffff", hover="#0f5fd6",
+                font=("PingFang SC", 13, "bold"), padx=24, pady=10, disabled=False):
+    """用 Canvas 绘制自定义按钮，解决 macOS 上 tk 按钮不显示 bg 颜色的问题。"""
+    cvs = tk.Canvas(parent, highlightthickness=0, bd=0)
+    # 先测量文字宽度来确定按钮宽度
+    import tkinter.font as tkfont
+    f = tkfont.Font(family=font[0], size=font[1], weight="bold")
+    tw = f.measure(text)
+    th = f.metrics("linespace")
+    w = tw + padx * 2
+    h = th + pady * 2
+    cvs.configure(width=w, height=h)
+
+    radius = h // 2
+    x0, y0, x1, y1 = 0, 0, w, h
+    color = bg if not disabled else "#b0b0b0"
+
+    def draw(c=color):
+        cvs.delete("all")
+        cvs.create_oval(x0, y0, x0 + 2 * radius, y0 + 2 * radius, fill=c, outline=c)
+        cvs.create_oval(x1 - 2 * radius, y0, x1, y0 + 2 * radius, fill=c, outline=c)
+        cvs.create_rectangle(x0 + radius, y0, x1 - radius, y1, fill=c, outline=c)
+        cvs.create_text(w // 2, h // 2, text=text, fill=fg, font=font)
+
+    draw()
+
+    def on_enter(e):
+        if not disabled:
+            draw(hover)
+
+    def on_leave(e):
+        if not disabled:
+            draw(bg)
+
+    def on_click(e):
+        if not disabled:
+            command()
+
+    cvs.bind("<Enter>", on_enter)
+    cvs.bind("<Leave>", on_leave)
+    cvs.bind("<Button-1>", on_click)
+    cvs.configure(cursor="hand2" if not disabled else "arrow")
+    return cvs
+
+
 def run_gui():
     root = tk.Tk()
     root.title("PDF 批量删除文字工具")
-    root.geometry("640x480")
+    root.geometry("680x520")
     root.resizable(False, False)
 
-    pad = {"padx": 16, "pady": 6}
+    # 固定使用浅色主题配色，保证文字在任何系统主题下都清晰可读
+    BG = "#f5f6f8"        # 窗口背景（浅灰）
+    CARD = "#ffffff"      # 卡片/输入框背景
+    FG = "#1a1a1a"        # 主文字（深黑）
+    FG_SUB = "#555555"    # 次级文字
+    FG_HINT = "#888888"   # 提示文字
+    ACCENT = "#1677ff"    # 强调色（蓝）
+    BORDER = "#d0d3d8"    # 边框
+
+    root.configure(bg=BG)
+
+    pad = {"padx": 20, "pady": 6}
 
     # 标题
-    tk.Label(root, text="PDF 批量删除指定文字", font=("Microsoft YaHei", 16, "bold")).pack(anchor="w", **pad)
+    tk.Label(root, text="PDF 批量删除指定文字", font=("PingFang SC", 17, "bold"),
+             bg=BG, fg=FG).pack(anchor="w", padx=20, pady=(18, 4))
 
-    # 文件选择
-    tk.Label(root, text="1. 选择 PDF 文件", font=("Microsoft YaHei", 10)).pack(anchor="w", **pad)
-    file_frame = tk.Frame(root)
-    file_frame.pack(fill="x", padx=16)
+    def section_label(text, top=14):
+        tk.Label(root, text=text, font=("PingFang SC", 11),
+                 bg=BG, fg=FG_SUB).pack(anchor="w", padx=20, pady=(top, 4))
+
+    # 1. 文件选择
+    section_label("1. 选择 PDF 文件", top=10)
+    file_frame = tk.Frame(root, bg=BG)
+    file_frame.pack(fill="x", padx=20)
     file_var = tk.StringVar()
-    file_entry = tk.Entry(file_frame, textvariable=file_var, width=50)
-    file_entry.pack(side="left", fill="x", expand=True)
-    tk.Button(file_frame, text="浏览…", command=lambda: file_var.set(
-        filedialog.askopenfilename(filetypes=[("PDF 文件", "*.pdf")])
-    )).pack(side="left", padx=(8, 0))
+    file_entry = tk.Entry(file_frame, textvariable=file_var, width=50,
+                          font=("PingFang SC", 11), bg=CARD, fg=FG,
+                          relief="solid", bd=1, highlightthickness=0)
+    file_entry.pack(side="left", fill="x", expand=True, ipady=5)
+    browse_btn = make_button(
+        file_frame, "浏览…",
+        command=lambda: file_var.set(
+            filedialog.askopenfilename(filetypes=[("PDF 文件", "*.pdf")])),
+        font=("PingFang SC", 11, "bold"), padx=18, pady=6)
+    browse_btn.pack(side="left", padx=(10, 0))
 
-    # 要删除的文字
-    tk.Label(root, text="2. 要删除的文字（一字不差，含空格/逗号/句点）", font=("Microsoft YaHei", 10)).pack(anchor="w", padx=16, pady=(12, 0))
+    # 2. 要删除的文字
+    section_label("2. 要删除的文字（一字不差，含空格/逗号/句点）")
     target_var = tk.StringVar()
-    tk.Entry(root, textvariable=target_var, width=60).pack(fill="x", padx=16)
+    tk.Entry(root, textvariable=target_var, width=60, font=("PingFang SC", 11),
+             bg=CARD, fg=FG, relief="solid", bd=1).pack(fill="x", padx=20, ipady=5)
 
-    # 保留前缀
-    tk.Label(root, text="3. 保留前缀（可选）：只删前缀后面的部分，前缀本身保留", font=("Microsoft YaHei", 10)).pack(anchor="w", padx=16, pady=(12, 0))
+    # 3. 保留前缀
+    section_label("3. 保留前缀（可选）：只删前缀后面的部分，前缀本身保留")
     prefix_var = tk.StringVar(value="FBA: ")
-    tk.Entry(root, textvariable=prefix_var, width=60).pack(fill="x", padx=16)
-    tk.Label(root, text="   示例：文字是“FBA: 某公司”，前缀填“FBA: ”，则只删“某公司”保留“FBA: ”", font=("Microsoft YaHei", 8), fg="#888").pack(anchor="w", **pad)
+    tk.Entry(root, textvariable=prefix_var, width=60, font=("PingFang SC", 11),
+             bg=CARD, fg=FG, relief="solid", bd=1).pack(fill="x", padx=20, ipady=5)
+    tk.Label(root, text="示例：文字是“FBA: 某公司”，前缀填“FBA: ”，则只删“某公司”保留“FBA: ”",
+             font=("PingFang SC", 9), bg=BG, fg=FG_HINT).pack(anchor="w", padx=20, pady=(4, 0))
 
     # 状态栏
     status_var = tk.StringVar(value="请选择文件并填写要删除的文字")
-    status = tk.Label(root, textvariable=status_var, fg="#333")
-    status.pack(anchor="w", padx=16, pady=(16, 0))
+    status = tk.Label(root, textvariable=status_var, font=("PingFang SC", 10), bg=BG, fg=FG_SUB)
+    status.pack(anchor="w", padx=20, pady=(18, 4))
 
     # 进度条
-    progress = ttk.Progressbar(root, mode="indeterminate", length=600)
-    progress.pack(padx=16, pady=8)
+    progress = ttk.Progressbar(root, mode="indeterminate", length=640)
+    progress.pack(padx=20, pady=(0, 4))
 
-    # 按钮
-    btn = tk.Button(root, text="开始处理", font=("Microsoft YaHei", 12, "bold"), bg="#1677ff", fg="white",
-                    activebackground="#0f5fd6", activeforeground="white", width=16, height=1)
-    btn.pack(pady=16)
+    # 按钮（用 Canvas 自定义，确保蓝色底白字在任何系统都清晰可见）
+    btn = make_button(root, "开始处理", command=None, font=("PingFang SC", 14, "bold"),
+                      padx=36, pady=12)
+    btn.pack(pady=14)
 
     def do_work():
         input_path = file_var.get().strip().strip('"')
@@ -128,7 +197,6 @@ def run_gui():
             messagebox.showerror("错误", f"文件不存在：\n{input_path}")
             return
 
-        btn.config(state="disabled")
         progress.start(12)
         status_var.set("正在处理……")
 
@@ -143,11 +211,12 @@ def run_gui():
             except Exception as e:
                 root.after(0, lambda: messagebox.showerror("出错", str(e)))
             finally:
-                root.after(0, lambda: (progress.stop(), btn.config(state="normal"), status_var.set("就绪，可再次处理")))
+                root.after(0, lambda: (progress.stop(), status_var.set("就绪，可再次处理")))
 
         threading.Thread(target=_run, daemon=True).start()
 
-    btn.config(command=do_work)
+    # 将 do_work 绑定到按钮的点击事件
+    btn.bind("<Button-1>", lambda e: do_work())
 
     root.mainloop()
 
