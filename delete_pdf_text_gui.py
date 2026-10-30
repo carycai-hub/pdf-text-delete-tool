@@ -89,12 +89,12 @@ def run_gui():
     )).pack(side="left", padx=(8, 0))
 
     # 要删除的文字
-    tk.Label(root, text="2. 要删除的文字（一字不差，含空格/逗号/句点）", font=("Microsoft YaHei", 10)).pack(anchor="w", pady=(12, 0), **pad)
+    tk.Label(root, text="2. 要删除的文字（一字不差，含空格/逗号/句点）", font=("Microsoft YaHei", 10)).pack(anchor="w", padx=16, pady=(12, 0))
     target_var = tk.StringVar()
     tk.Entry(root, textvariable=target_var, width=60).pack(fill="x", padx=16)
 
     # 保留前缀
-    tk.Label(root, text="3. 保留前缀（可选）：只删前缀后面的部分，前缀本身保留", font=("Microsoft YaHei", 10)).pack(anchor="w", pady=(12, 0), **pad)
+    tk.Label(root, text="3. 保留前缀（可选）：只删前缀后面的部分，前缀本身保留", font=("Microsoft YaHei", 10)).pack(anchor="w", padx=16, pady=(12, 0))
     prefix_var = tk.StringVar(value="FBA: ")
     tk.Entry(root, textvariable=prefix_var, width=60).pack(fill="x", padx=16)
     tk.Label(root, text="   示例：文字是“FBA: 某公司”，前缀填“FBA: ”，则只删“某公司”保留“FBA: ”", font=("Microsoft YaHei", 8), fg="#888").pack(anchor="w", **pad)
@@ -102,7 +102,7 @@ def run_gui():
     # 状态栏
     status_var = tk.StringVar(value="请选择文件并填写要删除的文字")
     status = tk.Label(root, textvariable=status_var, fg="#333")
-    status.pack(anchor="w", pady=(16, 0), **pad)
+    status.pack(anchor="w", padx=16, pady=(16, 0))
 
     # 进度条
     progress = ttk.Progressbar(root, mode="indeterminate", length=600)
