@@ -25,7 +25,7 @@ jobs:
 
       - name: Build EXE
         run: |
-          pyinstaller --noconfirm --onefile --windowed --name "PDF文字删除工具" delete_pdf_text_gui.py
+          pyinstaller --noconfirm --onefile --windowed --name "PDF文字删除工具" --collect-all pymupdf delete_pdf_text_gui.py
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
@@ -51,7 +51,7 @@ jobs:
 
       - name: Build APP
         run: |
-          pyinstaller --noconfirm --onefile --windowed --name "PDF文字删除工具" delete_pdf_text_gui.py
+          pyinstaller --noconfirm --onefile --windowed --name "PDF文字删除工具" --collect-all pymupdf delete_pdf_text_gui.py
           # 给单文件可执行程序套一个标准 .app 壳，使其可双击运行
           APP="dist/PDF文字删除工具.app"
           mkdir -p "$APP/Contents/MacOS"
